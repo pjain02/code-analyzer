@@ -10,6 +10,7 @@ namespace Analyzer
     {
         static void Main(string[] args)
         {
+            Tokenizer.Split("[TestClass]");
         }
     }
 }
