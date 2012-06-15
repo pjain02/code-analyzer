@@ -72,14 +72,16 @@ namespace Analyzer
                 string temp = token;
                 while (temp.Length > 0)
                 {
+                    //Check for punctuation
                     if (IsPunc(temp[0]) || Char.IsSymbol(temp[0]))
                     {
                         _buffer.Enqueue(temp.Remove(1, token.Length - 1));
                         temp = temp.Remove(0, 1);
                     }
+                    //Add the word
                     else
                     {
-                        _buffer.Enqueue(AddWord(ref temp));
+                        _buffer.Enqueue(GetWord(ref temp));
                     }
                 }
             }
@@ -94,7 +96,7 @@ namespace Analyzer
             return Char.IsPunctuation(c);
         }
 
-        private string AddWord(ref string str)
+        private string GetWord(ref string str)
         {
             StringBuilder word = new StringBuilder("");
             for (int i = 0; i < str.Length; i++)
