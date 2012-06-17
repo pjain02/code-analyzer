@@ -94,9 +94,11 @@ namespace Analyzer
                 String lineToTokenize = _line;
                 if (posCComm == first)
                     lineToTokenize = TokenizeCComm(ref _line);
+                else
+                    _line = "";
 
                 //The next phase
-                if (lineToTokenize == "")
+                if (lineToTokenize == "" && _line != "")
                     continue;
                 char[] delim = { ' ', '\t' };
                 string[] tokens = lineToTokenize.Split(delim);
@@ -162,6 +164,7 @@ namespace Analyzer
                     else
                     {
                         commToken.Append("\n" + nextLine.Remove(endPos + 2));
+                        _buffer.Enqueue(commToken.ToString());
                         _line = nextLine.Remove(0, endPos + 2);
                     }
                 } while (endPos == -1);
