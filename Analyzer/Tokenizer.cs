@@ -10,12 +10,24 @@ namespace Analyzer
     public class Tokenizer
     {
         private Queue<String> _buffer;   //Token Buffer
-        private String _line;   //An instance of line read from the input
         private TextReader _reader;     //Reads a file or a string
 
         public Tokenizer()
         {
             _buffer = new Queue<String>();
+        }
+
+        public bool OpenFile(String path)
+        {
+            try
+            {
+                _reader = new StreamReader(path);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -25,7 +37,6 @@ namespace Analyzer
         /// <returns>Whether opened successfully or not</returns>
         public bool OpenString(String str)
         {
-            _line = "";
             try
             {
                 _reader = new StringReader(str);
@@ -61,32 +72,102 @@ namespace Analyzer
 
         private bool FillBuffer()
         {
-            string line = _reader.ReadLine();
-            if (line == null)
+            string _line = _reader.ReadLine();
+            if (_line == null)
                 return false;
 
-            char[] delim = { ' ', '\t' };
-            string[] tokens = line.Split(delim);
-            foreach(string token in tokens)
+            /* Comments and qouted strings are considered as single tokens
+             * and have to taken care of before tokenizing the rest of the line
+             */
+            do
             {
-                string temp = token;
-                while (temp.Length > 0)
+                int posCComm = _line.IndexOf("/*");
+                int posCppComm = _line.IndexOf("//");
+                int posSQoute = _line.IndexOf('\'');
+                int posDQoute = _line.IndexOf('\"');
+
+                int[] numbers = { posCComm, posCppComm, posDQoute, posSQoute };
+                for (int i = 0; i < numbers.Length; i++)
+                    numbers[i] = numbers[i] == -1 ? Int32.MaxValue : numbers[i];
+
+                int first = numbers.Min();
+                String lineToTokenize = _line;
+                if (posCComm == first)
+                    lineToTokenize = TokenizeCComm(ref _line);
+
+                //The next phase
+                if (lineToTokenize == "")
+                    continue;
+                char[] delim = { ' ', '\t' };
+                string[] tokens = lineToTokenize.Split(delim);
+                foreach (string token in tokens)
                 {
-                    //Check for punctuation
-                    if (IsPunc(temp[0]) || Char.IsSymbol(temp[0]))
+                    string temp = token;
+                    while (temp.Length > 0)
                     {
-                        _buffer.Enqueue(temp.Remove(1, token.Length - 1));
-                        temp = temp.Remove(0, 1);
-                    }
-                    //Add the word
-                    else
-                    {
-                        _buffer.Enqueue(GetWord(ref temp));
+                        //Check for punctuation
+                        if (IsPunc(temp[0]) || Char.IsSymbol(temp[0]))
+                        {
+                            _buffer.Enqueue(temp[0].ToString());
+                            temp = temp.Remove(0, 1);
+                        }
+                        //Add the word
+                        else
+                        {
+                            _buffer.Enqueue(GetWord(ref temp));
+                        }
                     }
                 }
-            }
+
+            } while (_line != "");
 
             return true;
+        }
+
+        private string TokenizeCComm(ref string _line)
+        {
+            //Check if the comment starts at beginning
+            int startPos = _line.IndexOf("/*");
+            string retStr = "";
+            if (startPos != 0)
+            {
+                retStr = _line.Remove(startPos);
+                _line = _line.Remove(0, startPos);
+                return retStr;
+            }
+
+            //If it starts at the beginning
+            int endPos = _line.IndexOf("*/");
+            if (endPos != -1)
+            {
+                _buffer.Enqueue(_line.Remove(endPos + 2));
+                _line = _line.Remove(0, endPos + 2);
+            }
+            else
+            {
+                //The comment spans multiple lines and they have to be
+                //retrieved too
+                StringBuilder commToken = new StringBuilder();
+                commToken.Append(_line);
+                string nextLine;
+                do
+                {
+                    nextLine = _reader.ReadLine();
+                    endPos = nextLine.IndexOf("*/");
+                    if (endPos == -1)
+                    {
+                        commToken.Append("\n" + nextLine);
+                        continue;
+                    }
+                    else
+                    {
+                        commToken.Append("\n" + nextLine.Remove(endPos + 2));
+                        _line = nextLine.Remove(0, endPos + 2);
+                    }
+                } while (endPos == -1);
+
+            }
+            return retStr;
         }
 
         private bool IsPunc(char c)
@@ -103,7 +184,7 @@ namespace Analyzer
             {
                 if (IsPunc(str[i]) || Char.IsSymbol(str[i]))
                 {
-                    str = str.Remove(0, i - 1);
+                    str = str.Remove(0, i);
                     return word.ToString();
                 }
                 else
