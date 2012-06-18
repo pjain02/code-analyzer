@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,11 +12,11 @@ namespace Analyzer
         static void Main(string[] args)
         {
             Tokenizer toker = new Tokenizer();
-            toker.OpenFile("TokerTest.cs");
+            toker.OpenFile("../../Tokenizer.cs");
             string temp;
             while ((temp = toker.GetToken()) != "")
             {
-                Console.WriteLine(temp);
+                Debug.WriteLine(temp);
             }
             toker.Close();
         }

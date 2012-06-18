@@ -76,9 +76,11 @@ namespace Analyzer
             do
             {
                 _line = _reader.ReadLine();
+                if (_line != null)
+                    _line = _line.Trim(new char[] { ' ', '\t' });
+                else
+                    return false;
             } while (_line == "");
-            if (_line == null)
-                return false;
 
             /* Comments and qouted strings are considered as single tokens
              * and have to taken care of before tokenizing the rest of the line
@@ -89,8 +91,9 @@ namespace Analyzer
                 int posCppComm = _line.IndexOf("//");
                 int posSQoute = _line.IndexOf('\'');
                 int posDQoute = _line.IndexOf('\"');
+                int posVSComm = _line.IndexOf("///");
 
-                int[] numbers = { posCComm, posCppComm, posDQoute, posSQoute };
+                int[] numbers = { posCComm, posCppComm, posDQoute, posSQoute, posVSComm };
                 for (int i = 0; i < numbers.Length; i++)
                     numbers[i] = numbers[i] == -1 ? Int32.MaxValue : numbers[i];
 
@@ -98,6 +101,8 @@ namespace Analyzer
                 String lineToTokenize = _line;
                 if (posCComm == first)
                     lineToTokenize = TokenizeCComm(ref _line);
+                else if (posVSComm == first)
+                    lineToTokenize = TokenizeVSComm(ref _line);
                 else if (posCppComm == first)
                     lineToTokenize = TokenizeCppComm(ref _line);
                 else if (posSQoute == first)
@@ -173,7 +178,10 @@ namespace Analyzer
                     }
                     else
                     {
-                        commToken.Append("\n" + nextLine.Remove(endPos + 2));
+                        if (endPos + 2 >= nextLine.Length)
+                            commToken.Append("\n" + nextLine);
+                        else
+                            commToken.Append("\n" + nextLine.Remove(endPos + 2));
                         _buffer.Enqueue(commToken.ToString());
                         _line = nextLine.Remove(0, endPos + 2);
                     }
@@ -195,7 +203,7 @@ namespace Analyzer
             else
             {
                 retStr = _line.Remove(startPos);
-                _line = _line.Remove(0, startPos + 2);
+                _line = _line.Remove(0, startPos);
             }
             
             return retStr;
@@ -255,6 +263,24 @@ namespace Analyzer
                         break;
                     }
                 }
+            }
+            else
+            {
+                retStr = _line.Remove(startPos);
+                _line = _line.Remove(0, startPos);
+            }
+
+            return retStr;
+        }
+
+        private string TokenizeVSComm(ref string _line)
+        {
+            string retStr = "";
+            int startPos = _line.IndexOf("///");
+            if (startPos == 0)
+            {
+                _buffer.Enqueue(_line);
+                _line = "";
             }
             else
             {
