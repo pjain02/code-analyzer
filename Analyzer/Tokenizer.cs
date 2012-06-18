@@ -94,6 +94,10 @@ namespace Analyzer
                 String lineToTokenize = _line;
                 if (posCComm == first)
                     lineToTokenize = TokenizeCComm(ref _line);
+                else if (posCppComm == first)
+                    lineToTokenize = TokenizeCppComm(ref _line);
+                else if (posSQoute == first)
+                    lineToTokenize = TokenizeSQoute(ref _line);
                 else
                     _line = "";
 
@@ -171,6 +175,34 @@ namespace Analyzer
 
             }
             return retStr;
+        }
+
+        private string TokenizeCppComm(ref string _line)
+        {
+            string retStr = "";
+            int startPos = _line.IndexOf("//");
+            if (startPos == 0)
+            {
+                _buffer.Enqueue(_line);
+                _line = "";
+            }
+            else
+            {
+                retStr = _line.Remove(startPos);
+                _line = _line.Remove(0, startPos + 2);
+            }
+            
+            return retStr;
+        }
+
+        private string TokenizeSQoute(ref string _line)
+        {
+            //Check if the qoute is at the beginning
+            int startPos = _line.IndexOf('\'');
+            if (startPos == 0)
+            {
+
+            }
         }
 
         private bool IsPunc(char c)
