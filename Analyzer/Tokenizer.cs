@@ -102,6 +102,8 @@ namespace Analyzer
                     lineToTokenize = TokenizeCppComm(ref _line);
                 else if (posSQoute == first)
                     lineToTokenize = TokenizeSQoute(ref _line);
+                else if (posDQoute == first)
+                    lineToTokenize = TokenizeDQoute(ref _line);
                 else
                     _line = "";
 
@@ -217,6 +219,38 @@ namespace Analyzer
                     if (_line[i] == '\'' && (_line[i - 1] != '\\' || _line[i - 2] == '\\'))
                     {
                         _buffer.Enqueue(sQoute.ToString());
+                        _line = _line.Remove(0, i + 1);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                retStr = _line.Remove(startPos);
+                _line = _line.Remove(0, startPos);
+            }
+
+            return retStr;
+        }
+
+        private string TokenizeDQoute(ref string _line)
+        {
+            //Check if the qoute is at the beginning
+            int startPos = _line.IndexOf('\"');
+            string retStr = "";
+            if (startPos == 0)
+            {
+                StringBuilder dQoute = new StringBuilder();
+                dQoute.Append('\"');
+                for (int i = 1; i < _line.Length; i++)
+                {
+                    dQoute.Append(_line[i]);
+                    /* Check the case where ending qoute might one of the following case
+                     * Ignore: "Test\'"
+                     * Valid: "Test\\'" */
+                    if (_line[i] == '\"' && (_line[i - 1] != '\\' || _line[i - 2] == '\\'))
+                    {
+                        _buffer.Enqueue(dQoute.ToString());
                         _line = _line.Remove(0, i + 1);
                         break;
                     }
