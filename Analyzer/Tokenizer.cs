@@ -72,7 +72,11 @@ namespace Analyzer
 
         private bool FillBuffer()
         {
-            string _line = _reader.ReadLine();
+            string _line;
+            do
+            {
+                _line = _reader.ReadLine();
+            } while (_line == "");
             if (_line == null)
                 return false;
 
@@ -199,10 +203,32 @@ namespace Analyzer
         {
             //Check if the qoute is at the beginning
             int startPos = _line.IndexOf('\'');
+            string retStr = "";
             if (startPos == 0)
             {
-
+                StringBuilder sQoute = new StringBuilder();
+                sQoute.Append('\'');
+                for (int i = 1; i < _line.Length; i++)
+                {
+                    sQoute.Append(_line[i]);
+                    /* Check the case where ending qoute might one of the following case
+                     * Ignore: "Test\'"
+                     * Valid: "Test\\'" */
+                    if (_line[i] == '\'' && (_line[i - 1] != '\\' || _line[i - 2] == '\\'))
+                    {
+                        _buffer.Enqueue(sQoute.ToString());
+                        _line = _line.Remove(0, i + 1);
+                        break;
+                    }
+                }
             }
+            else
+            {
+                retStr = _line.Remove(startPos);
+                _line = _line.Remove(0, startPos);
+            }
+
+            return retStr;
         }
 
         private bool IsPunc(char c)
